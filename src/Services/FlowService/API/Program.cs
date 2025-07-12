@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using RabbitMQ.Client;
@@ -20,7 +21,35 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Whatsapp.Flow.API", Version = "v1" });
+
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "API Key must appear in the X-API-KEY header.",
+        Type = SecuritySchemeType.ApiKey,
+        Name = "X-API-KEY",
+        In = ParameterLocation.Header,
+        Scheme = "ApiKeyScheme"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                },
+                In = ParameterLocation.Header
+            },
+            new string[]{}
+        }
+    });
+});
 
 // --- Bizim Eklediğimiz Bağımlılıklar ---
 
@@ -29,7 +58,13 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var connectionString = configuration.GetConnectionString("MongoDb");
-    return new MongoClient(connectionString);
+
+    // Bağlantı ayarlarını manuel olarak ve kesin bir şekilde oluşturma
+    var url = new MongoUrl(connectionString);
+    var settings = MongoClientSettings.FromUrl(url);
+    settings.Credential = MongoCredential.CreateCredential("admin", "root", "example");
+
+    return new MongoClient(settings);
 });
 
 builder.Services.AddScoped<IMongoDatabase>(sp =>
@@ -59,6 +94,36 @@ builder.Services.AddTransient<TenantInfoUpdatedIntegrationEventHandler>();
 // --- Bitiş ---
 
 var app = builder.Build();
+
+// --- API Key Middleware ---
+app.Use(async (context, next) =>
+{
+    // Swagger UI için anahtar kontrolünü atla
+    if (context.Request.Path.StartsWithSegments("/swagger"))
+    {
+        await next();
+        return;
+    }
+
+    if (!context.Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey))
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Api Key was not provided.");
+        return;
+    }
+
+    var apiKey = app.Configuration.GetValue<string>("Authentication:ApiKey");
+
+    if (!apiKey.Equals(extractedApiKey))
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Unauthorized client.");
+        return;
+    }
+
+    await next();
+});
+// --- Bitiş ---
 
 // Event Bus aboneliğini yapılandırma
 var eventBus = app.Services.GetRequiredService<IEventBus>();
