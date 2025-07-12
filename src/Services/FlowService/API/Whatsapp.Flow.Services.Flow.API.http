@@ -1,0 +1,6 @@
+@Whatsapp.Flow.Services.Flow.API_HostAddress = http://localhost:5092
+
+GET {{Whatsapp.Flow.Services.Flow.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

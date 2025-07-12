@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common\Whatsapp.Flow.BuildingBlocks.Common.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\Whatsapp.Flow.BuildingBlocks.EventBus.csproj" />
+    <ProjectReference Include="..\Domain\Whatsapp.Flow.Services.Webhook.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
