@@ -21,6 +21,7 @@ namespace Whatsapp.Flow.Services.Flow.Infrastructure.Repositories
             BsonClassMap.RegisterClassMap<ButtonNode>();
             BsonClassMap.RegisterClassMap<WaitNode>();
             BsonClassMap.RegisterClassMap<WebhookNode>();
+            BsonClassMap.RegisterClassMap<AskQuestionNode>();
         }
 
         public MongoFlowRepository(IMongoDatabase database)

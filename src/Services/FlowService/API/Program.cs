@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using RabbitMQ.Client;
 using System;
+using System.Text.Json.Serialization;
 using Whatsapp.Flow.BuildingBlocks.EventBus;
 using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
 using Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ;

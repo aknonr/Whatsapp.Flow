@@ -27,6 +27,7 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Entities
         
         // Bekleme durumu (WaitNode için)
         public WaitingState WaitingState { get; set; }
+        public AwaitingAnswerState AwaitingAnswerState { get; set; }
     }
 
     public class ConversationEntry
@@ -51,5 +52,12 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Entities
         public DateTime? WaitUntil { get; set; }
         public string WaitingNodeId { get; set; }
         public string WaitType { get; set; }
+    }
+    
+    public class AwaitingAnswerState
+    {
+        public bool IsAwaiting { get; set; }
+        public string AwaitingNodeId { get; set; }
+        public string VariableToSave { get; set; }
     }
 } 

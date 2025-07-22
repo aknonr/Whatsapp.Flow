@@ -14,7 +14,7 @@ namespace Whatsapp.Flow.BuildingBlocks.Common.Whatsapp.Webhook
         public required string Timestamp { get; set; }
 
         [JsonPropertyName("type")]
-        public required string Type { get; set; }
+        public required string Type { get; set; } // "button_reply" veya "list_reply"
 
         [JsonPropertyName("text")]
         public Text Text { get; set; }
@@ -48,6 +48,9 @@ namespace Whatsapp.Flow.BuildingBlocks.Common.Whatsapp.Webhook
 
         [JsonPropertyName("button_reply")]
         public ButtonReply ButtonReply { get; set; }
+
+        [JsonPropertyName("list_reply")]
+        public ListReply ListReply { get; set; }
     }
 
     public class ButtonReply
@@ -57,6 +60,18 @@ namespace Whatsapp.Flow.BuildingBlocks.Common.Whatsapp.Webhook
 
         [JsonPropertyName("title")]
         public required string Title { get; set; }
+    }
+
+    public class ListReply
+    {
+        [JsonPropertyName("id")]
+        public required string Id { get; set; }
+
+        [JsonPropertyName("title")]
+        public required string Title { get; set; }
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
     }
 
     public class Image

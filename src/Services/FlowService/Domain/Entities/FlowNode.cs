@@ -9,6 +9,7 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Entities
     [JsonDerivedType(typeof(ButtonNode), typeDiscriminator: "button")]
     [JsonDerivedType(typeof(WaitNode), typeDiscriminator: "wait")]
     [JsonDerivedType(typeof(WebhookNode), typeDiscriminator: "webhook")]
+    [JsonDerivedType(typeof(AskQuestionNode), typeDiscriminator: "askQuestion")]
     public abstract class FlowNode
     {
         public string Id { get; set; } = System.Guid.NewGuid().ToString();

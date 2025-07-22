@@ -1,31 +1,55 @@
 {
   "Routes": [
     {
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "https",
+      "UpstreamPathTemplate": "/api/v1/identity/tenants",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7123
+          "Port": 5091
         }
       ],
-      "UpstreamPathTemplate": "/gateway/identity/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+      "DownstreamPathTemplate": "/api/tenants"
     },
     {
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "https",
+      "UpstreamPathTemplate": "/api/v1/identity/users",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 7232
+          "Port": 5091
         }
       ],
-      "UpstreamPathTemplate": "/gateway/flows/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+      "DownstreamPathTemplate": "/api/users"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/flows/{url}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5092
+        }
+      ],
+      "DownstreamPathTemplate": "/api/flows/{url}"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/webhooks/whatsapp",
+      "UpstreamHttpMethod": [ "POST", "GET" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5093
+        }
+      ],
+      "DownstreamPathTemplate": "/api/webhooks/whatsapp"
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:5000"
+    "BaseUrl": "http://localhost:5090"
   }
 } 

@@ -43,10 +43,8 @@ namespace Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.EventHandlin
                 return;
             }
             
-            var messageContent = message.Text?.Body ?? ""; // Diğer mesaj tipleri (image, button_reply) eklenecek.
-            
-            _logger.LogInformation("Tenant {TenantId} için akış motoru tetikleniyor...", tenant.Id);
-            await _flowEngine.RunAsync(tenant, message.From, messageContent);
+            // FlowEngine'e tüm mesaj nesnesini gönderiyoruz.
+            await _flowEngine.RunAsync(tenant, message);
         }
     }
 } 
