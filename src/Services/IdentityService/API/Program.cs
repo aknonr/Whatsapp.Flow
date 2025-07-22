@@ -7,22 +7,41 @@ using System;
 using Whatsapp.Flow.BuildingBlocks.EventBus;
 using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
 using Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ;
+using Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands;
+using Whatsapp.Flow.Services.Identity.Application.Features.User.Commands;
+using Whatsapp.Flow.Services.Identity.Application.Interfaces;
 using Whatsapp.Flow.Services.Identity.Domain.Repositories;
 using Whatsapp.Flow.Services.Identity.Infrastructure.Repositories;
+using Whatsapp.Flow.Services.Identity.Infrastructure.Services;
+using Whatsapp.Flow.Services.Identity.Application.Configuration;
+using Microsoft.Extensions.Options;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// MediatR'ı ekliyoruz. Bu, Application katmanındaki tüm handler'ları otomatik olarak bulur.
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+// --- Bağımlılıkları ve Servisleri Kaydetme ---
+
+// AppSettings'den ayarları okuma ve DI'a ekleme
+var jwtSettings = new JwtSettings();
+builder.Configuration.Bind(JwtSettings.SectionName, jwtSettings);
+builder.Services.AddSingleton(Options.Create(jwtSettings));
 
 
-// --- Bizim Eklediğimiz Bağımlılıklar ---
+// Repositories
+builder.Services.AddScoped<ITenantRepository, MongoTenantRepository>();
+builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
+
+// Services
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// MediatR
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateTenantCommand>());
+
+// Command Handlers (MediatR kullanmayanlar için)
+builder.Services.AddScoped<RegisterUserCommandHandler>();
+
 
 // 1. MongoDB Bağlantısını Kaydetme
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -41,9 +60,6 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 
 
 // 2. Repository'leri Kaydetme
-builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
-builder.Services.AddScoped<ITenantRepository, MongoTenantRepository>();
-
 // 3. Event Bus'ı Kaydetme
 builder.Services.AddEventBus(builder.Configuration);
 

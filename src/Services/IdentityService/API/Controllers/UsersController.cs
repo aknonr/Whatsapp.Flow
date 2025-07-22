@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Whatsapp.Flow.Services.Identity.Application.Features.User.Commands;
@@ -8,27 +9,25 @@ namespace Whatsapp.Flow.Services.Identity.API.Controllers
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly RegisterUserCommandHandler _registerUserCommandHandler;
+        private readonly IMediator _mediator;
 
-        public UsersController(RegisterUserCommandHandler registerUserCommandHandler)
+        public UsersController(IMediator mediator)
         {
-            _registerUserCommandHandler = registerUserCommandHandler;
+            _mediator = mediator;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserCommand command)
         {
-            try
-            {
-                await _registerUserCommandHandler.Handle(command);
-                return Ok(new { Message = "Kullanıcı başarıyla oluşturuldu." });
-            }
-            catch (System.Exception ex)
-            {
-                // Basit hata yönetimi. Gerçek bir uygulamada daha detaylı loglama ve
-                // kullanıcı dostu hata mesajları dönülmelidir.
-                return BadRequest(new { Error = ex.Message });
-            }
+            await _mediator.Send(command);
+            return Ok(new { Message = "Kullanıcı başarıyla oluşturuldu." });
+        }
+        
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginCommand command)
+        {
+            var token = await _mediator.Send(command);
+            return Ok(new { Token = token });
         }
     }
 } 

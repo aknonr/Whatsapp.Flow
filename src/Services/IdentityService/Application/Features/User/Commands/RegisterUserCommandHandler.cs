@@ -1,43 +1,44 @@
+using MediatR;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Whatsapp.Flow.Services.Identity.Application.Interfaces;
 using Whatsapp.Flow.Services.Identity.Domain.Entities;
 using Whatsapp.Flow.Services.Identity.Domain.Repositories;
 using UserEntity = Whatsapp.Flow.Services.Identity.Domain.Entities.User;
 
 namespace Whatsapp.Flow.Services.Identity.Application.Features.User.Commands
 {
-    public class RegisterUserCommandHandler
+    public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand>
     {
         private readonly IUserRepository _userRepository;
+        private readonly IPasswordService _passwordService;
 
-        public RegisterUserCommandHandler(IUserRepository userRepository)
+        public RegisterUserCommandHandler(IUserRepository userRepository, IPasswordService passwordService)
         {
             _userRepository = userRepository;
+            _passwordService = passwordService;
         }
 
-        public async Task Handle(RegisterUserCommand command)
+        public async Task Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
-            // 1. E-postanın zaten kayıtlı olup olmadığını kontrol et (isteğe bağlı, ama önerilir)
-            var existingUser = await _userRepository.GetByEmailAsync(command.Email);
+            var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                throw new Exception("Bu e-posta adresi zaten kullanılıyor."); // Daha sonra özel exception türleri kullanılacak
+                throw new Exception("Bu e-posta adresi zaten kullanılıyor.");
             }
 
-            // 2. Parolayı hash'le (Bu kısım daha sonra gerçek bir hash kütüphanesi ile yapılacak)
-            var passwordHash = $"hashed_{command.Password}";
+            var passwordHash = _passwordService.HashPassword(request.Password);
 
-            // 3. Yeni kullanıcı nesnesini oluştur
             var user = new UserEntity
             {
-                Email = command.Email,
+                Email = request.Email,
                 PasswordHash = passwordHash,
-                TenantId = command.TenantId
+                TenantId = request.TenantId,
+                CreatedAt = DateTime.UtcNow
             };
 
-            // 4. Kullanıcıyı veritabanına ekle
             await _userRepository.AddAsync(user);
-            
-            // 5. Unit of Work deseni kullanılırsa burada SaveChanges çağrılır.
         }
     }
 } 
