@@ -17,6 +17,10 @@ namespace Whatsapp.Flow.Services.Flow.Infrastructure.Repositories
             // Bu, polymorphism'in (çok biçimlilik) doğru çalışmasını sağlar.
             BsonClassMap.RegisterClassMap<SendMessageNode>();
             BsonClassMap.RegisterClassMap<DecisionNode>();
+            BsonClassMap.RegisterClassMap<ListMenuNode>();
+            BsonClassMap.RegisterClassMap<ButtonNode>();
+            BsonClassMap.RegisterClassMap<WaitNode>();
+            BsonClassMap.RegisterClassMap<WebhookNode>();
         }
 
         public MongoFlowRepository(IMongoDatabase database)
@@ -56,11 +60,48 @@ namespace Whatsapp.Flow.Services.Flow.Infrastructure.Repositories
         public async Task<bool> UpdateAsync(string id, Domain.Entities.Flow flow)
         {
             flow.Id = id;
+            flow.UpdatedAt = DateTime.UtcNow;
             var result = await _flowsCollection.ReplaceOneAsync(
                 f => f.Id == id,
                 flow);
 
             return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
+
+        public async Task<IEnumerable<Domain.Entities.Flow>> GetActiveFlowsByTenantIdAsync(string tenantId)
+        {
+            return await _flowsCollection.Find(f => f.TenantId == tenantId && f.IsActive).ToListAsync();
+        }
+
+        public async Task<Domain.Entities.Flow> GetFlowByTriggerKeywordAsync(string tenantId, string keyword)
+        {
+            var filter = Builders<Domain.Entities.Flow>.Filter.And(
+                Builders<Domain.Entities.Flow>.Filter.Eq(f => f.TenantId, tenantId),
+                Builders<Domain.Entities.Flow>.Filter.Eq(f => f.IsActive, true),
+                Builders<Domain.Entities.Flow>.Filter.AnyIn("Settings.TriggerKeywords", new[] { keyword })
+            );
+            
+            return await _flowsCollection.Find(filter).FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<Domain.Entities.Flow>> GetFlowsByCategoryAsync(string tenantId, string category)
+        {
+            return await _flowsCollection.Find(f => f.TenantId == tenantId && f.Category == category).ToListAsync();
+        }
+
+        public async Task<bool> SetActiveStatusAsync(string id, bool isActive)
+        {
+            var update = Builders<Domain.Entities.Flow>.Update
+                .Set(f => f.IsActive, isActive)
+                .Set(f => f.UpdatedAt, DateTime.UtcNow);
+                
+            var result = await _flowsCollection.UpdateOneAsync(f => f.Id == id, update);
+            return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
+
+        public async Task<int> GetFlowCountByTenantAsync(string tenantId)
+        {
+            return (int)await _flowsCollection.CountDocumentsAsync(f => f.TenantId == tenantId);
         }
     }
 } 

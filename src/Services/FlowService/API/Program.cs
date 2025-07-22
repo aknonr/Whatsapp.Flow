@@ -78,6 +78,7 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 builder.Services.AddScoped<IFlowRepository, MongoFlowRepository>();
 builder.Services.AddScoped<ITenantRepository, MongoTenantRepository>();
 builder.Services.AddScoped<IFlowStateRepository, MongoFlowStateRepository>();
+builder.Services.AddScoped<IFlowTemplateRepository, MongoFlowTemplateRepository>();
 
 
 // 3. Application Services
