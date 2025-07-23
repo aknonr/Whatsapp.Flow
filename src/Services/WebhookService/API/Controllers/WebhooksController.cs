@@ -45,7 +45,7 @@ namespace Whatsapp.Flow.Services.Webhook.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Receive()
         {
-            using var reader = new System.IO.StreamReader(Request.Body);
+            using var reader = new StreamReader(Request.Body);
             var body = await reader.ReadToEndAsync();
 
             _logger.LogDebug("Gelen webhook payload'u: {Payload}", body);
