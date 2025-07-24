@@ -63,6 +63,12 @@ builder.Services.AddScoped<IMongoDatabase>(sp =>
 // 3. Event Bus'ı Kaydetme
 builder.Services.AddEventBus(builder.Configuration);
 
+// Authorization servislerini kaydetme
+builder.Services.AddAuthorization();
+
+// Controllers'ı kaydetme
+builder.Services.AddControllers();
+
 // --- Bitiş ---
 
 var app = builder.Build();
