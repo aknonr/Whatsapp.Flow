@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Whatsapp.Flow.Services.Flow.Domain.Repositories;
 using Whatsapp.Flow.Services.Flow.Domain.Entities;
+using Whatsapp.Flow.Services.Flow.Application.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,11 +14,13 @@ namespace Whatsapp.Flow.Services.Flow.API.Controllers
     {
         private readonly IFlowRepository _flowRepository;
         private readonly IFlowTemplateRepository _flowTemplateRepository;
+        private readonly IFlowNoteService _flowNoteService;
 
-        public FlowsController(IFlowRepository flowRepository, IFlowTemplateRepository flowTemplateRepository)
+        public FlowsController(IFlowRepository flowRepository, IFlowTemplateRepository flowTemplateRepository, IFlowNoteService flowNoteService)
         {
             _flowRepository = flowRepository;
             _flowTemplateRepository = flowTemplateRepository;
+            _flowNoteService = flowNoteService;
         }
 
         [HttpGet("tenant/{tenantId}")]
@@ -156,5 +159,109 @@ namespace Whatsapp.Flow.Services.Flow.API.Controllers
 
             return NoContent();
         }
+
+        // Not işlemleri
+        [HttpPost("{flowId}/notes")]
+        public async Task<ActionResult<FlowNote>> AddNote(string flowId, [FromBody] AddNoteRequest request)
+        {
+            try
+            {
+                var note = await _flowNoteService.AddNoteAsync(
+                    flowId, 
+                    request.Content, 
+                    request.CreatedBy, 
+                    request.Color, 
+                    request.Priority, 
+                    request.Category);
+
+                return CreatedAtAction(nameof(GetNoteById), new { flowId, noteId = note.Id }, note);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("{flowId}/notes")]
+        public async Task<ActionResult<List<FlowNote>>> GetNotes(string flowId)
+        {
+            var notes = await _flowNoteService.GetNotesByFlowIdAsync(flowId);
+            return Ok(notes);
+        }
+
+        [HttpGet("{flowId}/notes/{noteId}")]
+        public async Task<ActionResult<FlowNote>> GetNoteById(string flowId, string noteId)
+        {
+            var note = await _flowNoteService.GetNoteByIdAsync(flowId, noteId);
+            if (note == null)
+            {
+                return NotFound("Note not found.");
+            }
+            return Ok(note);
+        }
+
+        [HttpPut("{flowId}/notes/{noteId}")]
+        public async Task<IActionResult> UpdateNote(string flowId, string noteId, [FromBody] UpdateNoteRequest request)
+        {
+            var success = await _flowNoteService.UpdateNoteAsync(
+                flowId, 
+                noteId, 
+                request.Content, 
+                request.UpdatedBy, 
+                request.Color, 
+                request.Priority, 
+                request.Category);
+
+            if (!success)
+            {
+                return NotFound("Note not found.");
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{flowId}/notes/{noteId}")]
+        public async Task<IActionResult> DeleteNote(string flowId, string noteId)
+        {
+            var success = await _flowNoteService.DeleteNoteAsync(flowId, noteId);
+            if (!success)
+            {
+                return NotFound("Note not found.");
+            }
+
+            return NoContent();
+        }
+
+        [HttpGet("{flowId}/notes/category/{category}")]
+        public async Task<ActionResult<List<FlowNote>>> GetNotesByCategory(string flowId, string category)
+        {
+            var notes = await _flowNoteService.GetNotesByCategoryAsync(flowId, category);
+            return Ok(notes);
+        }
+
+        [HttpGet("{flowId}/notes/priority/{priority}")]
+        public async Task<ActionResult<List<FlowNote>>> GetNotesByPriority(string flowId, int priority)
+        {
+            var notes = await _flowNoteService.GetNotesByPriorityAsync(flowId, priority);
+            return Ok(notes);
+        }
+    }
+
+    public class AddNoteRequest
+    {
+        public string Content { get; set; }
+        public string CreatedBy { get; set; }
+        public string Color { get; set; } = "#FFD700";
+        public int Priority { get; set; } = 3;
+        public string Category { get; set; } = "Genel";
+    }
+
+    public class UpdateNoteRequest
+    {
+        public string Content { get; set; }
+        public string UpdatedBy { get; set; }
+        public string Color { get; set; }
+        public int? Priority { get; set; }
+        public string Category { get; set; }
     }
 } 

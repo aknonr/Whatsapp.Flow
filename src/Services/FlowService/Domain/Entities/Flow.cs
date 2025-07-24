@@ -14,6 +14,7 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Entities
         public FlowType Type { get; set; } = FlowType.Custom;
         public string Category { get; set; } // Örn: "Sales", "Support", "Marketing"
         public List<FlowNode> Nodes { get; set; } = new List<FlowNode>();
+        public List<FlowNote> Notes { get; set; } = new List<FlowNote>();
         public Dictionary<string, object> Variables { get; set; } = new Dictionary<string, object>();
         public FlowSettings Settings { get; set; } = new FlowSettings();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -37,5 +38,19 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Entities
         public int MaxExecutionTime { get; set; } = 3600; // saniye
         public bool AllowMultipleInstances { get; set; } = false;
         public string DefaultLanguage { get; set; } = "tr";
+    }
+
+    public class FlowNote
+    {
+        public string Id { get; set; } = System.Guid.NewGuid().ToString();
+        public string Content { get; set; }
+        public string Color { get; set; } = "#FFD700";
+        public int Priority { get; set; } = 3;
+        public string Category { get; set; } = "Genel";
+        public Position Position { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string CreatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string UpdatedBy { get; set; }
     }
 } 

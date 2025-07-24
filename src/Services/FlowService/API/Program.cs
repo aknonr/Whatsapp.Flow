@@ -85,6 +85,7 @@ builder.Services.AddScoped<IFlowTemplateRepository, MongoFlowTemplateRepository>
 // 3. Application Services
 builder.Services.AddHttpClient<IWhatsappService, WhatsappService>();
 builder.Services.AddScoped<FlowEngine>();
+builder.Services.AddScoped<IFlowNoteService, FlowNoteService>();
 
 
 // 4. Event Bus'ı Kaydetme

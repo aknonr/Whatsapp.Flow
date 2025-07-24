@@ -22,6 +22,7 @@ namespace Whatsapp.Flow.Services.Flow.Infrastructure.Repositories
             BsonClassMap.RegisterClassMap<WaitNode>();
             BsonClassMap.RegisterClassMap<WebhookNode>();
             BsonClassMap.RegisterClassMap<AskQuestionNode>();
+            BsonClassMap.RegisterClassMap<NoteNode>();
         }
 
         public MongoFlowRepository(IMongoDatabase database)
@@ -103,6 +104,55 @@ namespace Whatsapp.Flow.Services.Flow.Infrastructure.Repositories
         public async Task<int> GetFlowCountByTenantAsync(string tenantId)
         {
             return (int)await _flowsCollection.CountDocumentsAsync(f => f.TenantId == tenantId);
+        }
+
+        // Not işlemleri
+        public async Task<FlowNote> AddNoteAsync(string flowId, FlowNote note)
+        {
+            var update = Builders<Domain.Entities.Flow>.Update
+                .Push(f => f.Notes, note);
+                
+            var result = await _flowsCollection.UpdateOneAsync(f => f.Id == flowId, update);
+            
+            if (result.IsAcknowledged && result.ModifiedCount > 0)
+                return note;
+            else
+                throw new InvalidOperationException($"Flow with id {flowId} not found or could not be updated.");
+        }
+
+        public async Task<bool> UpdateNoteAsync(string flowId, string noteId, FlowNote note)
+        {
+            var filter = Builders<Domain.Entities.Flow>.Filter.And(
+                Builders<Domain.Entities.Flow>.Filter.Eq(f => f.Id, flowId),
+                Builders<Domain.Entities.Flow>.Filter.ElemMatch(f => f.Notes, n => n.Id == noteId)
+            );
+
+            var update = Builders<Domain.Entities.Flow>.Update
+                .Set("Notes.$", note);
+
+            var result = await _flowsCollection.UpdateOneAsync(filter, update);
+            return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> DeleteNoteAsync(string flowId, string noteId)
+        {
+            var update = Builders<Domain.Entities.Flow>.Update
+                .PullFilter(f => f.Notes, n => n.Id == noteId);
+
+            var result = await _flowsCollection.UpdateOneAsync(f => f.Id == flowId, update);
+            return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
+
+        public async Task<List<FlowNote>> GetNotesByFlowIdAsync(string flowId)
+        {
+            var flow = await _flowsCollection.Find(f => f.Id == flowId).SingleOrDefaultAsync();
+            return flow?.Notes ?? new List<FlowNote>();
+        }
+
+        public async Task<FlowNote> GetNoteByIdAsync(string flowId, string noteId)
+        {
+            var flow = await _flowsCollection.Find(f => f.Id == flowId).SingleOrDefaultAsync();
+            return flow?.Notes?.FirstOrDefault(n => n.Id == noteId);
         }
     }
 } 
