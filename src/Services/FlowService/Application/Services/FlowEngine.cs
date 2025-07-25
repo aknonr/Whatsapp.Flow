@@ -84,7 +84,7 @@ namespace Whatsapp.Flow.Services.Flow.Application.Services
                     break;
                 case DecisionNode dn:
                     var matchedCondition = dn.Conditions
-                        .FirstOrDefault(c => c.ExpectedInput.Equals(incomingMessage.Text?.Body, StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(c => c.ExpectedValue.Equals(incomingMessage.Text?.Body, StringComparison.OrdinalIgnoreCase));
                     nextNodeId = matchedCondition != null
                         ? node.Outputs.FirstOrDefault(o => o.SourceHandle == matchedCondition.TargetOutputHandle)?.TargetNodeId
                         : node.Outputs.FirstOrDefault()?.TargetNodeId;

@@ -130,7 +130,7 @@ app.Use(async (context, next) =>
 
 // Event Bus aboneliğini yapılandırma
 var eventBus = app.Services.GetRequiredService<IEventBus>();
-eventBus.Subscribe<WhatsappMessageReceivedIntegrationEvent, WhatsappMessageReceivedIntegrationEventHandler>();
+eventBus.Subscribe<Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.Events.WhatsappMessageReceivedIntegrationEvent, WhatsappMessageReceivedIntegrationEventHandler>();
 eventBus.Subscribe<TenantInfoUpdatedIntegrationEvent, TenantInfoUpdatedIntegrationEventHandler>();
 
 

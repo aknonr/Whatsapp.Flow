@@ -6,6 +6,7 @@ using Polly;
 using Polly.Retry;
 using RabbitMQ.Client.Events;
 
+
 namespace Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ
 {
     public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
