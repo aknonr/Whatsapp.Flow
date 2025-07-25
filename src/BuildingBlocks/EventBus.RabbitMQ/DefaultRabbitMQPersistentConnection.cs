@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Polly;
 using Polly.Retry;
+using RabbitMQ.Client.Events;
 
 namespace Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ
 {
@@ -71,7 +72,7 @@ namespace Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ
             }
         }
 
-        private void OnConnectionBlocked(object sender, RabbitMQ.Client.Events.ConnectionBlockedEventArgs e)
+        private void OnConnectionBlocked(object sender, ConnectionBlockedEventArgs e)
         {
             if (_disposed) return;
 
@@ -80,7 +81,7 @@ namespace Whatsapp.Flow.BuildingBlocks.EventBus.RabbitMQ
             TryConnect();
         }
 
-        private void OnCallbackException(object sender, RabbitMQ.Client.Events.CallbackExceptionEventArgs e)
+        private void OnCallbackException(object sender, CallbackExceptionEventArgs e)
         {
             if (_disposed) return;
 
