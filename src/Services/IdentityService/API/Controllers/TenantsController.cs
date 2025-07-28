@@ -35,5 +35,28 @@ namespace Whatsapp.Flow.Services.Identity.API.Controllers
             var tenant = await _mediator.Send(query);
             return Ok(tenant);
         }
+
+        [HttpPut("{id}")]
+        [HasRole(Role.SuperAdmin)]
+        public async Task<IActionResult> UpdateTenant(string id, [FromBody] UpdateTenantCommand command)
+        {
+            if (id != command.Id)
+            {
+                // Normalde id'yi command'a set edip devam ederiz ama güvenlik için kontrol de eklenebilir.
+                command.Id = id;
+            }
+
+            await _mediator.Send(command);
+            return NoContent(); // Başarılı güncelleme sonrası 204 No Content dönmek standarttır.
+        }
+
+        [HttpDelete("{id}")]
+        [HasRole(Role.SuperAdmin)]
+        public async Task<IActionResult> DeleteTenant(string id)
+        {
+            var command = new DeleteTenantCommand(id);
+            await _mediator.Send(command);
+            return NoContent();
+        }
     }
 } 

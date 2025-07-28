@@ -35,32 +35,32 @@ namespace Whatsapp.Flow.Services.Identity.API.Middleware
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             var statusCode = HttpStatusCode.InternalServerError;
-            var response = new { message = exception.Message, errors = new Dictionary<string, string[]>() };
+            object responsePayload;
 
             switch (exception)
             {
                 case ValidationException validationException:
                     statusCode = HttpStatusCode.BadRequest;
-                    response = new { message = "Validation failed.", errors = validationException.Errors };
+                    responsePayload = new { message = "One or more validation errors occurred.", errors = validationException.Errors };
                     break;
                 case NotFoundException notFoundException:
                     statusCode = HttpStatusCode.NotFound;
+                    responsePayload = new { message = notFoundException.Message };
                     break;
-                case UnauthorizedAccessException _:
+                case UnauthorizedAccessException:
                     statusCode = HttpStatusCode.Unauthorized;
+                    responsePayload = new { message = "Unauthorized access." };
                     break;
-                    // Diğer özel exception türleri buraya eklenebilir.
+                default:
+                    _logger.LogError(exception, "An unhandled exception has occurred: {Message}", exception.Message);
+                    responsePayload = new { message = "An internal server error has occurred." };
+                    break;
             }
-
-            if(statusCode == HttpStatusCode.InternalServerError)
-            {
-                _logger.LogError(exception, "An unhandled exception has occurred.");
-            }
-
+            
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
 
-            var jsonResponse = JsonSerializer.Serialize(response);
+            var jsonResponse = JsonSerializer.Serialize(responsePayload);
             await context.Response.WriteAsync(jsonResponse);
         }
     }

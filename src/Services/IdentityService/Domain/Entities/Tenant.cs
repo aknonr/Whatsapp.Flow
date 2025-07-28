@@ -12,7 +12,9 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Entities
         public string ContactPhone { get; set; }
         public string TimeZone { get; set; } = "UTC";
         public string Language { get; set; } = "tr-TR";
-        
+        public bool IsDeleted { get; set; }
+
+
         // WhatsApp Business Account Bilgileri
         public string WhatsAppBusinessAccountId { get; set; }
         public string MetaAppId { get; set; }
@@ -24,7 +26,8 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime? ActivatedAt { get; set; }
         public DateTime? SuspendedAt { get; set; }
-        
+        public DateTime DeletedAt { get; set; }
+
         // Ayarlar
         public TenantSettings Settings { get; set; } = new TenantSettings();
     }

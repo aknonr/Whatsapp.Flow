@@ -7,5 +7,7 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Repositories
     {
         Task AddAsync(Tenant tenant);
         Task<Tenant> GetByIdAsync(string id);
+        Task UpdateAsync(Tenant tenant);
+        Task SoftDeleteAsync(string id);
     }
 } 
