@@ -21,24 +21,28 @@ namespace Whatsapp.Flow.Services.Identity.Infrastructure.Repositories
 
         public async Task<Tenant> GetByIdAsync(string id)
         {
-            return await _collection.Find(t => t.Id == id).SingleOrDefaultAsync();
-        }
-
-        public async Task SoftDeleteAsync(string id)
-        {
-            var filter = Builders<Tenant>.Filter.Eq(t => t.Id, id);
-            var update = Builders<Tenant>.Update
-                                         .Set(t => t.IsDeleted, true)
-                                         .Set(t => t.DeletedAt, DateTime.UtcNow);
-
-            await _collection.UpdateOneAsync(filter, update);
+            return await _collection.Find(t => t.Id == id && !t.IsDeleted).SingleOrDefaultAsync();
         }
 
         public async Task UpdateAsync(Tenant tenant)
         {
-            await _collection.ReplaceOneAsync(t => t.Id == tenant.Id, tenant);
+            await _collection.ReplaceOneAsync(t => t.Id == tenant.Id && !t.IsDeleted, tenant);
         }
 
-       
+        public async Task DeleteAsync(string id)
+        {
+            await _collection.DeleteOneAsync(t => t.Id == id);
+        }
+
+        public async Task SoftDeleteAsync(string id, string userId)
+        {
+            var filter = Builders<Tenant>.Filter.Eq(t => t.Id, id);
+            var update = Builders<Tenant>.Update
+                .Set(t => t.IsDeleted, true)
+                .Set(t => t.DeletedAt, DateTime.UtcNow)
+                .Set(t => t.DeletedBy, userId);
+
+            await _collection.UpdateOneAsync(filter, update);
+        }
     }
 } 

@@ -8,6 +8,7 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Repositories
         Task AddAsync(Tenant tenant);
         Task<Tenant> GetByIdAsync(string id);
         Task UpdateAsync(Tenant tenant);
-        Task SoftDeleteAsync(string id);
+        Task DeleteAsync(string id); // Bu Hard Delete için kalabilir
+        Task SoftDeleteAsync(string id, string userId);
     }
 } 
