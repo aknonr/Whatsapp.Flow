@@ -1,7 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Whatsapp.Flow.Services.Identity.API.Security;
 using Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands;
+using Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Queries;
+using Whatsapp.Flow.Services.Identity.Domain.Entities;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
 {
@@ -17,18 +20,20 @@ namespace Whatsapp.Flow.Services.Identity.API.Controllers
         }
 
         [HttpPost]
+        [HasRole(Role.SuperAdmin)]
         public async Task<IActionResult> CreateTenant([FromBody] CreateTenantCommand command)
         {
             var tenantId = await _mediator.Send(command);
             return CreatedAtAction(nameof(GetTenantById), new { id = tenantId }, null);
         }
 
-        // Bu metod şimdilik sadece CreatedAtAction'ın çalışması için bir iskelet.
-        // Gelecekte GetTenantByIdQuery oluşturulunca doldurulacak.
         [HttpGet("{id}")]
-        public IActionResult GetTenantById(string id)
+        [HasRole(Role.SuperAdmin)]
+        public async Task<IActionResult> GetTenantById(string id)
         {
-            return Ok($"Tenant {id}");
+            var query = new GetTenantByIdQuery(id);
+            var tenant = await _mediator.Send(query);
+            return Ok(tenant);
         }
     }
 } 

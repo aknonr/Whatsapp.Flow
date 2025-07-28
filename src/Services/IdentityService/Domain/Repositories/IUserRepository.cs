@@ -1,4 +1,5 @@
 using Whatsapp.Flow.Services.Identity.Domain.Entities;
+using System.Threading.Tasks;
 
 namespace Whatsapp.Flow.Services.Identity.Domain.Repositories
 {
@@ -9,9 +10,9 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Repositories
         Task<User?> GetByEmailAsync(string email);
 
         Task AddAsync(User user);
-
-        // Gelecekte ihtiyaç duyulabilecek diğer metodlar buraya eklenebilir.
-        // Örneğin: Task UpdateAsync(User user);
-        // Örneğin: Task DeleteAsync(string id);
+        
+        Task UpdateAsync(User user);
+        
+        Task DeleteAsync(string id);
     }
 } 

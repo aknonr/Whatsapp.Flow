@@ -15,29 +15,73 @@ using Whatsapp.Flow.Services.Identity.Infrastructure.Repositories;
 using Whatsapp.Flow.Services.Identity.Infrastructure.Services;
 using Whatsapp.Flow.Services.Identity.Application.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
+using System.Collections.Generic;
+using StackExchange.Redis;
+using Microsoft.AspNetCore.Authorization;
+using Whatsapp.Flow.Services.Identity.API.Security;
+using FluentValidation;
+using Whatsapp.Flow.Services.Identity.Application.Common.Behaviors;
+using System.Reflection;
+using Whatsapp.Flow.Services.Identity.API.Middleware;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddHttpContextAccessor();
 
-// --- Bağımlılıkları ve Servisleri Kaydetme ---
 
 // AppSettings'den ayarları okuma ve DI'a ekleme
 var jwtSettings = new JwtSettings();
 builder.Configuration.Bind(JwtSettings.SectionName, jwtSettings);
 builder.Services.AddSingleton(Options.Create(jwtSettings));
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
+    };
+});
+
+// Redis Cache
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")));
+builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+
 
 // Repositories
 builder.Services.AddScoped<ITenantRepository, MongoTenantRepository>();
 builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, MongoSubscriptionRepository>();
+builder.Services.AddScoped<ITenantRoleRepository, MongoTenantRoleRepository>();
 
 // Services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 
 // MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateTenantCommand>());
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+});
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(CreateTenantCommandValidator).Assembly);
+
 
 // Command Handlers (MediatR kullanmayanlar için)
 builder.Services.AddScoped<RegisterUserCommandHandler>();
@@ -66,26 +110,81 @@ builder.Services.AddEventBus(builder.Configuration);
 // Authorization servislerini kaydetme
 builder.Services.AddAuthorization();
 
+// Authorization
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+
 // Controllers'ı kaydetme
 builder.Services.AddControllers();
+
+// Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Identity Service API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below. Example: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
 
 // --- Bitiş ---
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlerMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity.API V1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.MapControllers(); 
+app.MapControllers();
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
+    {
+        context.Response.Redirect("/swagger");
+        return;
+    }
+    await next();
+});
 
 app.Run();
 

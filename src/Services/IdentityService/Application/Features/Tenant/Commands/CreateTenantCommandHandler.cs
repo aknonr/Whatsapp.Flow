@@ -1,4 +1,5 @@
 using MediatR;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Whatsapp.Flow.BuildingBlocks.EventBus;
@@ -13,11 +14,13 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
     public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, string>
     {
         private readonly ITenantRepository _tenantRepository;
+        private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IEventBus _eventBus;
 
-        public CreateTenantCommandHandler(ITenantRepository tenantRepository, IEventBus eventBus)
+        public CreateTenantCommandHandler(ITenantRepository tenantRepository, ISubscriptionRepository subscriptionRepository, IEventBus eventBus)
         {
             _tenantRepository = tenantRepository;
+            _subscriptionRepository = subscriptionRepository;
             _eventBus = eventBus;
         }
 
@@ -26,12 +29,34 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
             var tenant = new TenantEntity
             {
                 Name = request.Name,
-                PhoneNumber = request.PhoneNumber
+                CompanyName = request.CompanyName,
+                ContactEmail = request.ContactEmail,
+                ContactPhone = request.ContactPhone,
+                Status = TenantStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+                ActivatedAt = DateTime.UtcNow
             };
 
             await _tenantRepository.AddAsync(tenant);
 
-            var tenantInfoEvent = new TenantInfoUpdatedIntegrationEvent(tenant.Id, tenant.PhoneNumber);
+            // Yeni Tenant için deneme aboneliği oluştur
+            var trialSubscription = new Subscription
+            {
+                TenantId = tenant.Id,
+                Plan = SubscriptionPlan.Trial,
+                Status = SubscriptionStatus.Trial,
+                StartDate = DateTime.UtcNow,
+                TrialEndDate = DateTime.UtcNow.AddDays(14), // 14 günlük deneme
+                MaxUsers = 2,
+                MaxFlows = 5,
+                MaxMessagesPerMonth = 500,
+                MaxPhoneNumbers = 1
+            };
+
+            await _subscriptionRepository.AddAsync(trialSubscription);
+
+            // Event Bus aracılığıyla diğer servislere bilgi ver
+            var tenantInfoEvent = new TenantInfoUpdatedIntegrationEvent(tenant.Id, tenant.ContactPhone);
             _eventBus.Publish(tenantInfoEvent);
 
             return tenant.Id;

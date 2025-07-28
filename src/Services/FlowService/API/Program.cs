@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using RabbitMQ.Client;
 using System;
+using System.Text;
 using System.Text.Json.Serialization;
 using Whatsapp.Flow.BuildingBlocks.EventBus;
 using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
@@ -24,18 +27,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Whatsapp.Flow.API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Flow Service API", Version = "v1" });
 
-    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "API Key must appear in the X-API-KEY header.",
-        Type = SecuritySchemeType.ApiKey,
-        Name = "X-API-KEY",
+        Description = @"JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below. Example: 'Bearer 12345abcdef'",
+        Name = "Authorization",
         In = ParameterLocation.Header,
-        Scheme = "ApiKeyScheme"
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
             new OpenApiSecurityScheme
@@ -43,14 +46,41 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
+                    Id = "Bearer"
                 },
-                In = ParameterLocation.Header
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
             },
-            new string[]{}
+            new List<string>()
         }
     });
 });
+
+// JWT Authentication
+var jwtKey = builder.Configuration["JwtSettings:Key"];
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
+var jwtAudience = builder.Configuration["JwtSettings:Audience"];
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // --- Bizim Eklediğimiz Bağımlılıklar ---
 
@@ -98,36 +128,6 @@ builder.Services.AddTransient<TenantInfoUpdatedIntegrationEventHandler>();
 
 var app = builder.Build();
 
-// --- API Key Middleware ---
-app.Use(async (context, next) =>
-{
-    // Swagger UI için anahtar kontrolünü atla
-    if (context.Request.Path.StartsWithSegments("/swagger"))
-    {
-        await next();
-        return;
-    }
-
-    if (!context.Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey))
-    {
-        context.Response.StatusCode = 401;
-        await context.Response.WriteAsync("Api Key was not provided.");
-        return;
-    }
-
-    var apiKey = app.Configuration.GetValue<string>("Authentication:ApiKey");
-
-    if (!apiKey.Equals(extractedApiKey))
-    {
-        context.Response.StatusCode = 401;
-        await context.Response.WriteAsync("Unauthorized client.");
-        return;
-    }
-
-    await next();
-});
-// --- Bitiş ---
-
 // Event Bus aboneliğini yapılandırma
 var eventBus = app.Services.GetRequiredService<IEventBus>();
 eventBus.Subscribe<Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.Events.WhatsappMessageReceivedIntegrationEvent, WhatsappMessageReceivedIntegrationEventHandler>();
@@ -138,14 +138,29 @@ eventBus.Subscribe<TenantInfoUpdatedIntegrationEvent, TenantInfoUpdatedIntegrati
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Flow Service API V1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
+    {
+        context.Response.Redirect("/swagger");
+        return;
+    }
+    await next();
+});
 
 app.Run();
 

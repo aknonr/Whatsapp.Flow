@@ -35,6 +35,7 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.User.Commands
                 Email = request.Email,
                 PasswordHash = passwordHash,
                 TenantId = request.TenantId,
+                SystemRole = Domain.Entities.Role.User, // Role -> SystemRole olarak değiştirildi
                 CreatedAt = DateTime.UtcNow
             };
 

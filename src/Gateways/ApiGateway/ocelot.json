@@ -1,55 +1,51 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/api/v1/identity/tenants",
-      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5091
+          "Port": 5023
         }
       ],
-      "DownstreamPathTemplate": "/api/tenants"
-    },
-    {
-      "UpstreamPathTemplate": "/api/v1/identity/users",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5091
-        }
-      ],
-      "DownstreamPathTemplate": "/api/users"
-    },
-    {
-      "UpstreamPathTemplate": "/api/v1/flows/{url}",
+      "UpstreamPathTemplate": "/identity/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5092
-        }
-      ],
-      "DownstreamPathTemplate": "/api/flows/{url}"
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
     {
-      "UpstreamPathTemplate": "/api/v1/webhooks/whatsapp",
-      "UpstreamHttpMethod": [ "POST", "GET" ],
+      "DownstreamPathTemplate": "/api/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5093
+          "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/api/webhooks/whatsapp"
+      "UpstreamPathTemplate": "/flow/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamPathTemplate": "/webhook/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5090"
+    "BaseUrl": "http://localhost:5000"
   }
 } 

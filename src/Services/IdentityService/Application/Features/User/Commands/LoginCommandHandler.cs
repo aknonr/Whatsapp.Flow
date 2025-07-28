@@ -48,8 +48,8 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.User.Commands
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("tenantId", user.TenantId) 
-                // Gelecekte roller de buraya eklenebilir: new Claim(ClaimTypes.Role, "Admin")
+                new Claim("tenantId", user.TenantId),
+                new Claim(ClaimTypes.Role, user.SystemRole.ToString()) // Role -> SystemRole olarak değiştirildi
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

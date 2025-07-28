@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Whatsapp.Flow.Services.Flow.Domain.Repositories;
@@ -10,6 +11,7 @@ namespace Whatsapp.Flow.Services.Flow.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class FlowsController : ControllerBase
     {
         private readonly IFlowRepository _flowRepository;

@@ -26,7 +26,7 @@ namespace Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.EventHandlin
         {
             _logger.LogInformation("Handling WhatsappMessageReceivedIntegrationEvent for phone: {PhoneNumber}, tenant: {TenantId}", 
                 @event.PhoneNumber, @event.TenantId);
-
+            
             try
             {
                 // Message nesnesini oluştur
