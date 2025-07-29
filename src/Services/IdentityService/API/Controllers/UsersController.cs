@@ -1,12 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Whatsapp.Flow.Services.Identity.Application.Features.User.Commands;
 using Microsoft.AspNetCore.RateLimiting;
-using Whatsapp.Flow.Services.Identity.Application.Features.User.Queries;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
-using Whatsapp.Flow.Services.Identity.Application.Common.Security;
+using Whatsapp.Flow.Services.Identity.Application.Features.User.Queries;
 using Whatsapp.Flow.Services.Identity.API.Security;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
@@ -51,6 +50,25 @@ namespace Whatsapp.Flow.Services.Identity.API.Controllers
         {
             var users = await _mediator.Send(new GetUsersForTenantQuery());
             return Ok(users);
+        }
+
+        /// <summary>
+        /// Gets a specific user by their ID.
+        /// </summary>
+        /// <param name="id">The ID of the user to retrieve.</param>
+        /// <returns>The user's data.</returns>
+        /// <response code="200">Returns the specified user's data.</response>
+        /// <response code="404">If the user is not found in the tenant.</response>
+        /// <response code="403">If the user does not have 'users.read' permission.</response>
+        [HttpGet("{id}")]
+        [HasPermission("users.read")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetUserById(string id)
+        {
+            var user = await _mediator.Send(new GetUserByIdQuery(id));
+            return Ok(user);
         }
     }
 } 
