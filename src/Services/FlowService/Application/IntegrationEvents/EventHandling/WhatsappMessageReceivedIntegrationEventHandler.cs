@@ -6,6 +6,7 @@ using Whatsapp.Flow.Services.Flow.Application.Interfaces;
 using Whatsapp.Flow.Services.Flow.Application.Services;
 using Whatsapp.Flow.BuildingBlocks.Common.Whatsapp.Webhook;
 using Whatsapp.Flow.Services.Flow.Domain.Entities;
+using Whatsapp.Flow.Services.Identity.Domain.Entities;
 
 namespace Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.EventHandling
 {

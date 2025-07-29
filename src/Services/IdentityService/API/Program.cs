@@ -29,9 +29,80 @@ using System.Reflection;
 using Whatsapp.Flow.Services.Identity.API.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using Asp.Versioning;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.OpenApi.Any;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
+using System.Text;
+using Serilog;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+builder.Host.UseSerilog((context, configuration) => 
+    configuration.ReadFrom.Configuration(context.Configuration));
+
+// Health Checks
+var rabbitMQConfig = builder.Configuration.GetSection("RabbitMQ");
+var rabbitMQConnectionString = new StringBuilder();
+
+if (!string.IsNullOrEmpty(rabbitMQConfig["UserName"]) && !string.IsNullOrEmpty(rabbitMQConfig["Password"]))
+{
+    rabbitMQConnectionString.Append($"amqp://{rabbitMQConfig["UserName"]}:{rabbitMQConfig["Password"]}@{rabbitMQConfig["HostName"]}");
+}
+else
+{
+    rabbitMQConnectionString.Append($"amqp://{rabbitMQConfig["HostName"]}");
+}
+
+
+builder.Services.AddHealthChecks()
+    .AddMongoDb(
+        builder.Configuration.GetConnectionString("MongoDb"),
+        name: "mongodb-check",
+        tags: new string[] { "database" })
+    .AddRedis(
+        builder.Configuration.GetConnectionString("Redis"),
+        name: "redis-check",
+        tags: new string[] { "cache" })
+    .AddRabbitMQ(
+        rabbitMQConnectionString.ToString(),
+        name: "rabbitmq-check",
+        tags: new string[] { "message-broker" });
+
+
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ApiPolicy", policy =>
+    {
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+        if (allowedOrigins != null && allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+    });
+});
 
 // Rate Limiting
 builder.Services.AddRateLimiter(_ => _
@@ -102,6 +173,7 @@ builder.Services.AddMediatR(cfg => {
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTenantCommandValidator).Assembly);
 
+builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
 // Command Handlers (MediatR kullanmayanlar için)
 builder.Services.AddScoped<RegisterUserCommandHandler>();
@@ -141,16 +213,16 @@ builder.Services.AddControllers();
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Identity Service API", Version = "v1" });
-    
-    // Set the comments path for the Swagger JSON and UI.
+    // Add a custom operation filter which sets default values
+    options.OperationFilter<SwaggerDefaultValues>();
+
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
+    options.IncludeXmlComments(xmlPath);
 
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = @"JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below. Example: 'Bearer 12345abcdef'",
         Name = "Authorization",
@@ -159,7 +231,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
             new OpenApiSecurityScheme
@@ -182,6 +254,8 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseSerilogRequestLogging();
+
 app.UseRateLimiter();
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
@@ -199,9 +273,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("ApiPolicy");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.MapControllers()
    .RequireRateLimiting("fixed");
@@ -261,5 +342,68 @@ public static class CustomExtensionMethods
         services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
 
         return services;
+    }
+}
+
+public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
+{
+    private readonly IApiVersionDescriptionProvider _provider;
+
+    public ConfigureSwaggerOptions(IApiVersionDescriptionProvider provider) => _provider = provider;
+
+    public void Configure(SwaggerGenOptions options)
+    {
+        foreach (var description in _provider.ApiVersionDescriptions)
+        {
+            options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
+        }
+    }
+
+    private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
+    {
+        var info = new OpenApiInfo()
+        {
+            Title = "Identity Service API",
+            Version = description.ApiVersion.ToString(),
+            Description = "API for managing tenants, users, roles, and subscriptions."
+        };
+
+        if (description.IsDeprecated)
+        {
+            info.Description += " This API version has been deprecated.";
+        }
+
+        return info;
+    }
+}
+
+public class SwaggerDefaultValues : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        var apiDescription = context.ApiDescription;
+
+        // TODO: IsDeprecated extension method bulunamadığı için geçici olarak devre dışı
+        // operation.Deprecated |= apiDescription.IsDeprecated();
+
+        if (operation.Parameters == null)
+        {
+            return;
+        }
+
+        foreach (var parameter in operation.Parameters)
+        {
+            var description = apiDescription.ParameterDescriptions.First(p => p.Name == parameter.Name);
+            if (parameter.Description == null)
+            {
+                parameter.Description = description.ModelMetadata?.Description;
+            }
+            if (parameter.Schema.Default == null && description.DefaultValue != null)
+            {
+                parameter.Schema.Default = new OpenApiString(description.DefaultValue.ToString());
+            }
+
+            parameter.Required |= description.IsRequired;
+        }
     }
 }

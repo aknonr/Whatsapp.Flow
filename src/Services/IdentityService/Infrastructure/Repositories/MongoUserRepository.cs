@@ -43,5 +43,14 @@ namespace Whatsapp.Flow.Services.Identity.Infrastructure.Repositories
         {
             return await _usersCollection.Find(u => u.TenantId == tenantId).ToListAsync();
         }
+
+        public async Task<IEnumerable<User>> GetUsersByRoleIdAsync(string roleId, string tenantId)
+        {
+            var filter = Builders<User>.Filter.And(
+                Builders<User>.Filter.Eq(u => u.TenantId, tenantId),
+                Builders<User>.Filter.AnyEq(u => u.TenantRoleIds, roleId)
+            );
+            return await _usersCollection.Find(filter).ToListAsync();
+        }
     }
 } 

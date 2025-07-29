@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Http;
 using Whatsapp.Flow.Services.Identity.Application.Features.User.Queries;
 using Whatsapp.Flow.Services.Identity.API.Security;
+using Asp.Versioning;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class UsersController : ControllerBase
     {
         private readonly IMediator _mediator;

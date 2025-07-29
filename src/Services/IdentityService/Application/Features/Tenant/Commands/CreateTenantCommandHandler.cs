@@ -7,6 +7,8 @@ using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
 using Whatsapp.Flow.Services.Identity.Application.IntegrationEvents.Events;
 using Whatsapp.Flow.Services.Identity.Domain.Entities;
 using Whatsapp.Flow.Services.Identity.Domain.Repositories;
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
@@ -55,9 +57,11 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
 
             await _subscriptionRepository.AddAsync(trialSubscription);
 
-            // Event Bus aracılığıyla diğer servislere bilgi ver
-            var tenantInfoEvent = new TenantInfoUpdatedIntegrationEvent(tenant.Id, tenant.ContactPhone);
-            _eventBus.Publish(tenantInfoEvent);
+            // Publish integration event
+            var phoneNumbers = tenant.PhoneNumbers?.Select(p => p.DisplayPhoneNumber).ToList() ?? new List<string>();
+            var @event = new TenantInfoUpdatedIntegrationEvent(tenant.Id, tenant.Name, phoneNumbers);
+            
+            _eventBus.Publish(@event);
 
             return tenant.Id;
         }

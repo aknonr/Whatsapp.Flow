@@ -7,12 +7,16 @@ using Whatsapp.Flow.Services.Identity.Application.Features.TenantRoles.Commands;
 using Whatsapp.Flow.Services.Identity.Application.Features.TenantRoles.Queries;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.RateLimiting;
+using Asp.Versioning;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
 {
     [ApiController]
-    [Route("api/tenant-roles")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/tenant-roles")]
     [Authorize]
+    [EnableRateLimiting("fixed")]
     public class TenantRolesController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -5,7 +5,8 @@ namespace Whatsapp.Flow.Services.Flow.Domain.Repositories
 {
     public interface ITenantRepository
     {
-        Task<Tenant> GetByPhoneNumberAsync(string phoneNumber);
-        Task UpsertAsync(Tenant tenant);
+        Task<Tenant> GetByIdAsync(string id);
+        Task AddAsync(Tenant tenant);
+        Task UpdateAsync(Tenant tenant);
     }
 } 

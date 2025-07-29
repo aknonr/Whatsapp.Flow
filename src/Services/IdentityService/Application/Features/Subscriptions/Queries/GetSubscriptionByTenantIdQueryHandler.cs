@@ -43,21 +43,21 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Que
                 Plan = subscription.Plan,
                 Status = subscription.Status,
                 StartDate = subscription.StartDate,
-                EndDate = subscription.EndDate,
+                EndDate = subscription.EndDate ?? DateTime.MaxValue,
                 TrialEndDate = subscription.TrialEndDate,
                 Limits = new SubscriptionLimitsDto 
                 {
-                    MaxUsers = subscription.Limits.MaxUsers,
-                    MaxFlows = subscription.Limits.MaxFlows,
-                    MaxMessagesPerMonth = subscription.Limits.MaxMessagesPerMonth,
-                    MaxPhoneNumbers = subscription.Limits.MaxPhoneNumbers
+                    MaxUsers = subscription.MaxUsers,
+                    MaxFlows = subscription.MaxFlows,
+                    MaxMessagesPerMonth = subscription.MaxMessagesPerMonth,
+                    MaxPhoneNumbers = subscription.MaxPhoneNumbers
                 },
                 CurrentUsage = new SubscriptionUsageDto
                 {
-                    Users = subscription.CurrentUsage.Users,
-                    Flows = subscription.CurrentUsage.Flows,
-                    MessagesSentThisMonth = subscription.CurrentUsage.MessagesSentThisMonth,
-                    PhoneNumbers = subscription.CurrentUsage.PhoneNumbers
+                    Users = subscription.CurrentUsers,
+                    Flows = subscription.CurrentFlows,
+                    MessagesSentThisMonth = subscription.MessagesThisMonth,
+                    PhoneNumbers = subscription.CurrentPhoneNumbers
                 }
             };
             

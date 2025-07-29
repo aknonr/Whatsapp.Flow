@@ -30,7 +30,7 @@ namespace Whatsapp.Flow.Services.Flow.Application.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task RunAsync(Tenant tenant, Message incomingMessage)
+        public async Task RunAsync(Domain.Entities.Tenant tenant, Message incomingMessage)
         {
             var userPhone = incomingMessage.From;
             var flowState = await _flowStateRepository.GetByUserPhoneAsync(userPhone);
@@ -256,7 +256,7 @@ namespace Whatsapp.Flow.Services.Flow.Application.Services
         }
 
 
-        private async Task<FlowState> StartNewFlowAsync(Tenant tenant, string userPhone, Domain.Entities.Flow flow)
+        private async Task<FlowState> StartNewFlowAsync(Identity.Domain.Entities.Tenant tenant, string userPhone, Domain.Entities.Flow flow)
         {
             var flowState = new FlowState
             {

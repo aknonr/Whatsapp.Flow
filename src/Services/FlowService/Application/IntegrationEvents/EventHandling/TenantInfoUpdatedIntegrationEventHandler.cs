@@ -1,12 +1,12 @@
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
-using Whatsapp.Flow.Services.Flow.Domain.Repositories;
-using Whatsapp.Flow.Services.Identity.Application.IntegrationEvents.Events;
-using Microsoft.Extensions.Logging;
-using Whatsapp.Flow.Services.Flow.Domain.Entities;
 using Whatsapp.Flow.BuildingBlocks.EventBus.Events;
+using Whatsapp.Flow.Services.Identity.Application.IntegrationEvents.Events;
+using Whatsapp.Flow.Services.Flow.Domain.Entities;
+using Whatsapp.Flow.Services.Flow.Domain.Repositories;
 
-namespace Whatsapp.Flow.Services.FlowService.Application.IntegrationEvents.EventHandling
+namespace Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.EventHandling
 {
     public class TenantInfoUpdatedIntegrationEventHandler : IIntegrationEventHandler<TenantInfoUpdatedIntegrationEvent>
     {
@@ -21,17 +21,22 @@ namespace Whatsapp.Flow.Services.FlowService.Application.IntegrationEvents.Event
 
         public async Task Handle(TenantInfoUpdatedIntegrationEvent @event)
         {
-            _logger.LogInformation("----- Handling integration event: {IntegrationEventId} at {AppName}", @event.Id, "FlowService");
+            _logger.LogInformation("Handling integration event: {IntegrationEventId} - ({@IntegrationEvent})", @event.Id, @event);
 
-            var tenant = new Tenant
+            var tenant = await _tenantRepository.GetByIdAsync(@event.TenantId);
+
+            if (tenant == null)
             {
-                Id = @event.TenantId,
-                PhoneNumber = @event.PhoneNumber
-            };
-
-            await _tenantRepository.UpsertAsync(tenant);
-
-            _logger.LogInformation("----- Tenant info replicated for TenantId: {TenantId}", @event.TenantId);
+                // Create a new Tenant entity specific to FlowService
+                tenant = new Tenant(@event.TenantId, @event.Name, @event.PhoneNumbers);
+                await _tenantRepository.AddAsync(tenant);
+            }
+            else
+            {
+                // Update existing tenant info
+                tenant.UpdateInfo(@event.Name, @event.PhoneNumbers);
+                await _tenantRepository.UpdateAsync(tenant);
+            }
         }
     }
 } 

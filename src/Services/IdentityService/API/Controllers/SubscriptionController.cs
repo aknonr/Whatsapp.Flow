@@ -9,11 +9,13 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
 using Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Commands;
 using Microsoft.AspNetCore.Http;
+using Asp.Versioning;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [Authorize]
     [EnableRateLimiting("fixed")]
     public class SubscriptionController : ControllerBase
