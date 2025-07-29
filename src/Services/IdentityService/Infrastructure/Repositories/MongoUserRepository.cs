@@ -38,5 +38,10 @@ namespace Whatsapp.Flow.Services.Identity.Infrastructure.Repositories
         {
             await _usersCollection.DeleteOneAsync(u => u.Id == id);
         }
+
+        public async Task<IEnumerable<User>> GetByTenantIdAsync(string tenantId)
+        {
+            return await _usersCollection.Find(u => u.TenantId == tenantId).ToListAsync();
+        }
     }
 } 

@@ -38,4 +38,3 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
         }
     }
 } 
-} 

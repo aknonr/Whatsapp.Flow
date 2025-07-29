@@ -7,7 +7,7 @@ using Whatsapp.Flow.BuildingBlocks.EventBus.Abstractions;
 using Whatsapp.Flow.Services.Identity.Application.IntegrationEvents.Events;
 using Whatsapp.Flow.Services.Identity.Domain.Entities;
 using Whatsapp.Flow.Services.Identity.Domain.Repositories;
-using TenantEntity = Whatsapp.Flow.Services.Identity.Domain.Entities.Tenant;
+
 
 namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
 {
@@ -26,7 +26,7 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Tenant.Commands
 
         public async Task<string> Handle(CreateTenantCommand request, CancellationToken cancellationToken)
         {
-            var tenant = new TenantEntity
+            var tenant = new Domain.Entities.Tenant
             {
                 Name = request.Name,
                 CompanyName = request.CompanyName,

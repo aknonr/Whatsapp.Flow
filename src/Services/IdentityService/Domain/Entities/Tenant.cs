@@ -34,30 +34,8 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Entities
         public TenantSettings Settings { get; set; } = new TenantSettings();
     }
     
-    public class WhatsAppPhoneNumber
-    {
-        public string PhoneNumberId { get; set; }
-        public string DisplayPhoneNumber { get; set; }
-        public string VerifiedName { get; set; }
-        public string QualityRating { get; set; }
-        public bool IsActive { get; set; }
-        public DateTime AddedAt { get; set; }
-    }
     
-    public class TenantSettings
-    {
-        public bool EnableAutoReply { get; set; } = true;
-        public int MessageRetentionDays { get; set; } = 30;
-        public bool EnableWebhookLogging { get; set; } = true;
-        public string WebhookUrl { get; set; }
-        public Dictionary<string, object> CustomSettings { get; set; } = new Dictionary<string, object>();
-    }
     
-    public enum TenantStatus
-    {
-        PendingSetup = 1,
-        Active = 2,
-        Suspended = 3,
-        Inactive = 4
-    }
+  
+   
 } 

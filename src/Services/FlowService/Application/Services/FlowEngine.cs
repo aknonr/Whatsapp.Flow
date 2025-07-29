@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Whatsapp.Flow.BuildingBlocks.Common.Whatsapp.Webhook;
 using System.Net.Http;
+using Whatsapp.Flow.Services.Identity.Domain.Entities;
 
 namespace Whatsapp.Flow.Services.Flow.Application.Services
 {

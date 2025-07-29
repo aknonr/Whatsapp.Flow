@@ -27,9 +27,29 @@ using FluentValidation;
 using Whatsapp.Flow.Services.Identity.Application.Common.Behaviors;
 using System.Reflection;
 using Whatsapp.Flow.Services.Identity.API.Middleware;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Rate Limiting
+builder.Services.AddRateLimiter(_ => _
+    .AddFixedWindowLimiter(policyName: "fixed", options =>
+    {
+        options.PermitLimit = 100;
+        options.Window = TimeSpan.FromSeconds(60);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
+    })
+    .AddPolicy("login_policy", context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: context.Connection.RemoteIpAddress?.ToString(),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromSeconds(60)
+        })));
+
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
@@ -161,6 +181,8 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseRateLimiter();
+
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
@@ -180,7 +202,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.MapControllers();
+app.MapControllers()
+   .RequireRateLimiting("fixed");
 
 app.Use(async (context, next) =>
 {

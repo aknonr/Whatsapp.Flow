@@ -14,5 +14,6 @@ namespace Whatsapp.Flow.Services.Identity.Domain.Repositories
         Task UpdateAsync(User user);
         
         Task DeleteAsync(string id);
+        Task<IEnumerable<User>> GetByTenantIdAsync(string tenantId);
     }
 } 
