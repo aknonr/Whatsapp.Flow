@@ -3,11 +3,7 @@ using Whatsapp.Flow.BuildingBlocks.Common.Domain.Entities;
 
 namespace Whatsapp.Flow.Services.Flow.Domain.Entities
 {
-    /// <summary>
-    /// Represents a Tenant within the context of the FlowService.
-    /// This is a simplified version of the Tenant from IdentityService,
-    /// containing only the data needed for flow management.
-    /// </summary>
+    
     public class Tenant : BaseEntity
     {
         public string Name { get; private set; }
