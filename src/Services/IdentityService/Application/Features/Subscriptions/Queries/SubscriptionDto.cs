@@ -1,4 +1,5 @@
 using System;
+using Whatsapp.Flow.Services.Identity.Domain.Entities;
 
 namespace Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Queries
 {
@@ -6,27 +7,28 @@ namespace Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Que
     {
         public string Id { get; set; }
         public string TenantId { get; set; }
-        public string Plan { get; set; }
-        public string Status { get; set; }
+        public SubscriptionPlan Plan { get; set; }
+        public SubscriptionStatus Status { get; set; }
         public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; }
         public DateTime? TrialEndDate { get; set; }
+        public SubscriptionLimitsDto Limits { get; set; }
+        public SubscriptionUsageDto CurrentUsage { get; set; }
+    }
 
-        // Limits
+    public class SubscriptionLimitsDto
+    {
         public int MaxUsers { get; set; }
         public int MaxFlows { get; set; }
         public int MaxMessagesPerMonth { get; set; }
         public int MaxPhoneNumbers { get; set; }
+    }
 
-        // Usage
-        public int CurrentUsers { get; set; }
-        public int CurrentFlows { get; set; }
-        public int MessagesThisMonth { get; set; }
-        public int CurrentPhoneNumbers { get; set; }
-
-        // Billing
-        public decimal MonthlyPrice { get; set; }
-        public string Currency { get; set; }
-        public DateTime? NextPaymentDate { get; set; }
+    public class SubscriptionUsageDto
+    {
+        public int Users { get; set; }
+        public int Flows { get; set; }
+        public int MessagesSentThisMonth { get; set; }
+        public int PhoneNumbers { get; set; }
     }
 } 

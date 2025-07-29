@@ -131,8 +131,9 @@ builder.Services.AddEventBus(builder.Configuration);
 builder.Services.AddAuthorization();
 
 // Authorization
-builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
 
 
 // Controllers'ı kaydetme

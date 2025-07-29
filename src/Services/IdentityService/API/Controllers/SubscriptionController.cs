@@ -6,12 +6,16 @@ using Whatsapp.Flow.Services.Identity.API.Security;
 using Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Queries;
 using Whatsapp.Flow.Services.Identity.Domain.Entities;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using Whatsapp.Flow.Services.Identity.Application.Features.Subscriptions.Commands;
+using Microsoft.AspNetCore.Http;
 
 namespace Whatsapp.Flow.Services.Identity.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [EnableRateLimiting("fixed")]
     public class SubscriptionController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -44,6 +48,18 @@ namespace Whatsapp.Flow.Services.Identity.API.Controllers
             var query = new GetSubscriptionByTenantIdQuery(tenantId);
             var subscription = await _mediator.Send(query);
             return Ok(subscription);
+        }
+
+        [HttpPut("tenant/{tenantId}")]
+        [HasRole(Role.SuperAdmin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UpdateSubscription(string tenantId, [FromBody] UpdateSubscriptionCommand command)
+        {
+            command.TenantId = tenantId;
+            await _mediator.Send(command);
+            return NoContent();
         }
     }
 } 
