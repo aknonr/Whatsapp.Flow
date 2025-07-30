@@ -39,7 +39,7 @@ namespace Whatsapp.Flow.Services.Flow.Application.IntegrationEvents.EventHandlin
                 };
 
                 // Tenant bilgisini al (gerçek implementasyonda repository'den alınacak)
-                var tenant = new Tenant { Id = @event.TenantId };
+                var tenant = new Tenantd { Id = @event.TenantId };
 
                 // Flow engine'i tetikle
                 await _flowEngine.RunAsync(tenant, message);
